@@ -1,0 +1,15 @@
+# Streamlit for web UI
+streamlit>=1.35.0
+
+# OpenAI SDK for GPT-3.5/GPT-4
+openai>=1.0.0
+
+# Hugging Face API access
+requests
+Pillow
+
+# Google Gemini SDK
+google-generativeai>=0.3.2
+
+# (Optional) for better error handling/logging/debugging
+python-dotenv
