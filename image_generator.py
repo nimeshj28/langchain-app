@@ -19,7 +19,7 @@ def generate_motivational_image(analysis_data, horde_api_key):
     # Submit generation request
     API_URL = "https://stablehorde.net/api/v2/generate/async"
     headers = {
-        "apikey": sqxv_vIcDsXsl8D9bADrng,  # Use '0000000000' for public/free or your own key for better speed
+        "apikey": "sqxv_vIcDsXsl8D9bADrng",  # Use '0000000000' for public/free or your own key for better speed
         "Client-Agent": "streamlit-motivation-app/1.0"
     }
     payload = {
@@ -50,3 +50,4 @@ def generate_motivational_image(analysis_data, horde_api_key):
             return image, image_prompt
         time.sleep(5)
     raise Exception("Image was not ready. Please try again later.")
+
