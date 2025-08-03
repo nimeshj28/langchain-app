@@ -7,7 +7,6 @@ from gemini_chat import TherapeuticChatbot
 from analyzer import analyze_conversation
 from image_generator import generate_motivational_image
 
-# Initialize
 init_database()
 
 st.set_page_config(
@@ -16,7 +15,6 @@ st.set_page_config(
     layout="wide"
 )
 
-# Initialize session state
 if 'session_id' not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
     st.session_state.messages = []
@@ -26,63 +24,48 @@ if 'session_id' not in st.session_state:
 if 'show_summary' not in st.session_state:
     st.session_state.show_summary = False
 
-# Main App
 st.title("🌱 Your Life Journey Companion")
 st.subheader("A safe space to explore your thoughts and discover your strengths")
 
-# API Keys Setup Section
 if not st.session_state.get('api_keys_set', False):
     st.header("🔑 API Keys Setup")
-    
-    # API Key inputs
     col1, col2 = st.columns(2)
-    
     with col1:
         st.subheader("Required APIs")
         google_api_key = st.text_input(
-            "🔵 Google Gemini API Key", 
-            value="AIzaSyCG5BBFFpHfCU4oLYtAOU_D49q_9y3iJo0",
-            type="password"
-        )
-        
-        openai_api_key = st.text_input(
-            "🟢 OpenAI API Key (Optional)", 
+            "🔵 Google Gemini API Key",
             value="",
             type="password"
         )
-    
-    with col2:
-        st.subheader("Optional (for images)")
-        horde_api_key = st.text_input(
-            "🟡 Stable Horde API Key (get from https://stablehorde.net)", 
-            value="sqxv_vIcDsXsl8D9bADrng",
+        openai_api_key = st.text_input(
+            "🟢 OpenAI API Key (for chat analysis, optional)",
+            value="",
             type="password"
         )
-    
-    # Validation and setup
+    with col2:
+        st.subheader("Optional (for images)")
+        openai_image_api_key = st.text_input(
+            "🟡 OpenAI API Key (for DALL·E 2 image generation)",
+            value="",
+            type="password"
+        )
     if st.button("🚀 Start My Journey", type="primary"):
         if google_api_key:
             try:
                 st.session_state.chatbot = TherapeuticChatbot(google_api_key)
                 st.session_state.google_api_key = google_api_key
                 st.session_state.openai_api_key = openai_api_key if openai_api_key else None
-                st.session_state.horde_api_key = horde_api_key if horde_api_key else None
+                st.session_state.openai_image_api_key = openai_image_api_key if openai_image_api_key else None
                 st.session_state.api_keys_set = True
-                
                 st.success("✅ Setup complete! Let's begin your journey.")
                 st.rerun()
-                
             except Exception as e:
                 st.error(f"❌ Error with Gemini API key: {str(e)}")
         else:
             st.error("❌ Google Gemini API key is required to start.")
-    
     st.stop()
 
-# Main Chat Interface
 st.markdown("---")
-
-# API Status indicators
 col1, col2, col3, col4 = st.columns(4)
 with col1:
     st.success("🔵 Gemini: Connected")
@@ -92,44 +75,33 @@ with col2:
     else:
         st.warning("🟢 OpenAI: Not set")
 with col3:
-    if st.session_state.get('horde_api_key'):
-        st.success("🟡 Stable Horde: Connected")
+    if st.session_state.get('openai_image_api_key'):
+        st.success("🟡 DALL·E 2: Connected")
     else:
-        st.warning("🟡 Stable Horde: Not set")
+        st.warning("🟡 DALL·E 2: Not set")
 with col4:
     if st.button("🔄 Reset API Keys"):
-        for key in ['api_keys_set', 'google_api_key', 'openai_api_key', 'horde_api_key', 'chatbot']:
+        for key in ['api_keys_set', 'google_api_key', 'openai_api_key', 'openai_image_api_key', 'chatbot']:
             if key in st.session_state:
                 del st.session_state[key]
         st.rerun()
-
 st.markdown("---")
 
-# Chat Interface
 chat_container = st.container()
-
 with chat_container:
-    # Display chat history
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
-    
-    # Initial message
     if not st.session_state.messages:
         with st.chat_message("assistant"):
             initial_msg = "Hey! 👋 What would you like to talk about today? I'm here to listen and help you explore your thoughts."
             st.markdown(initial_msg)
             st.session_state.messages.append({"role": "assistant", "content": initial_msg})
 
-# User input
 if prompt := st.chat_input("Share what's on your mind..."):
-    # Add user message
     st.session_state.messages.append({"role": "user", "content": prompt})
-    
     with st.chat_message("user"):
         st.markdown(prompt)
-    
-    # Get AI response
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
             try:
@@ -138,11 +110,8 @@ if prompt := st.chat_input("Share what's on your mind..."):
                 st.session_state.messages.append({"role": "assistant", "content": response})
             except Exception as e:
                 st.error(f"❌ Gemini API Error: {str(e)}")
-    
-    # Save session after each exchange
     save_session(st.session_state.session_id, st.session_state.messages)
 
-# "Done, please summarize" button
 if len(st.session_state.messages) > 2:
     st.markdown("---")
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -150,17 +119,14 @@ if len(st.session_state.messages) > 2:
         if st.button("✨ Done, please summarize my session", use_container_width=True, type="primary"):
             st.session_state.show_summary = True
 
-# Summary and Analysis Section
 if st.session_state.show_summary:
     st.markdown("---")
     st.header("📊 Your Session Insights")
-    
     with st.spinner("Analyzing your conversation..."):
         try:
-            # Get analysis
             if st.session_state.get('openai_api_key'):
                 analysis_result = analyze_conversation(
-                    st.session_state.messages, 
+                    st.session_state.messages,
                     st.session_state.get('openai_api_key')
                 )
                 analysis_data = json.loads(analysis_result)
@@ -170,63 +136,49 @@ if st.session_state.show_summary:
         except Exception as e:
             st.error(f"❌ OpenAI Analysis Error: {str(e)}")
             st.stop()
-        
-        # Display analysis
         col1, col2 = st.columns(2)
-        
         with col1:
             st.subheader("💭 Session Summary")
             st.write(analysis_data['summary'])
-            
             st.subheader("😊 Emotions Detected")
             for emotion in analysis_data['emotions']:
                 st.badge(emotion)
-            
             st.subheader("💪 Your Strengths")
             for strength in analysis_data['strengths']:
                 st.write(f"• {strength}")
-        
         with col2:
             st.subheader("🌱 Growth Opportunities")
             for area in analysis_data['growth_areas']:
                 st.write(f"• {area}")
-            
             st.subheader("🎯 What You're Naturally Good At")
             st.info(analysis_data['natural_talent'])
-            
             st.subheader("🚀 Unique Capabilities to Leverage")
             for capability in analysis_data['unique_capabilities']:
                 st.write(f"• {capability}")
-    
-    # Generate motivational image
+
     st.subheader("🎨 Your Personalized Motivation")
-    
-    if st.session_state.get('horde_api_key'):
+    if st.session_state.get('openai_image_api_key'):
         with st.spinner("Creating your personalized image..."):
             try:
                 image, image_prompt = generate_motivational_image(
-                    analysis_data, 
-                    st.session_state.get('horde_api_key')
+                    analysis_data,
+                    st.session_state.get('openai_image_api_key')
                 )
                 st.image(image, caption="Your journey visualization", use_container_width=True)
                 st.caption(f"Generated from: {image_prompt}")
             except Exception as e:
-                st.error(f"❌ Stable Horde Image Error: {str(e)}")
+                st.error(f"❌ DALL·E 2 Image Error: {str(e)}")
     else:
-        st.error("❌ Stable Horde API key required for image generation")
-    
-    # Save complete session
+        st.error("❌ OpenAI API key required for image generation")
     save_session(
-        st.session_state.session_id, 
+        st.session_state.session_id,
         st.session_state.messages,
         analysis_data['summary'],
         json.dumps(analysis_data),
         image_prompt if 'image_prompt' in locals() else "No image generated"
     )
-    
-    # Reset option
     if st.button("🔄 Start New Session"):
-        keys_to_keep = ['google_api_key', 'openai_api_key', 'horde_api_key', 'api_keys_set']
+        keys_to_keep = ['google_api_key', 'openai_api_key', 'openai_image_api_key', 'api_keys_set']
         keys_backup = {k: st.session_state[k] for k in keys_to_keep if k in st.session_state}
         st.session_state.clear()
         st.session_state.update(keys_backup)
@@ -235,7 +187,6 @@ if st.session_state.show_summary:
         st.session_state.chatbot = TherapeuticChatbot(st.session_state.google_api_key)
         st.rerun()
 
-# Footer
 st.markdown("---")
 st.markdown("""
 <div style='text-align: center; color: #666; padding: 20px;'>
