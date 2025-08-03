@@ -53,9 +53,9 @@ if not st.session_state.get('api_keys_set', False):
     
     with col2:
         st.subheader("Optional (for images)")
-        hf_token = st.text_input(
-            "🟡 HuggingFace Token", 
-            value="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",
+        horde_api_key = st.text_input(
+            "🟡 Stable Horde API Key (get from https://stablehorde.net)", 
+            value="sqxv_vIcDsXsl8D9bADrng",
             type="password"
         )
     
@@ -63,11 +63,10 @@ if not st.session_state.get('api_keys_set', False):
     if st.button("🚀 Start My Journey", type="primary"):
         if google_api_key:
             try:
-                # Test Google API
                 st.session_state.chatbot = TherapeuticChatbot(google_api_key)
                 st.session_state.google_api_key = google_api_key
                 st.session_state.openai_api_key = openai_api_key if openai_api_key else None
-                st.session_state.hf_token = hf_token if hf_token else None
+                st.session_state.horde_api_key = horde_api_key if horde_api_key else None
                 st.session_state.api_keys_set = True
                 
                 st.success("✅ Setup complete! Let's begin your journey.")
@@ -93,13 +92,13 @@ with col2:
     else:
         st.warning("🟢 OpenAI: Not set")
 with col3:
-    if st.session_state.get('hf_token'):
-        st.success("🟡 HuggingFace: Connected")
+    if st.session_state.get('horde_api_key'):
+        st.success("🟡 Stable Horde: Connected")
     else:
-        st.warning("🟡 HuggingFace: Not set")
+        st.warning("🟡 Stable Horde: Not set")
 with col4:
     if st.button("🔄 Reset API Keys"):
-        for key in ['api_keys_set', 'google_api_key', 'openai_api_key', 'hf_token', 'chatbot']:
+        for key in ['api_keys_set', 'google_api_key', 'openai_api_key', 'horde_api_key', 'chatbot']:
             if key in st.session_state:
                 del st.session_state[key]
         st.rerun()
@@ -202,19 +201,19 @@ if st.session_state.show_summary:
     # Generate motivational image
     st.subheader("🎨 Your Personalized Motivation")
     
-    if st.session_state.get('hf_token'):
+    if st.session_state.get('horde_api_key'):
         with st.spinner("Creating your personalized image..."):
             try:
                 image, image_prompt = generate_motivational_image(
                     analysis_data, 
-                    st.session_state.get('hf_token')
+                    st.session_state.get('horde_api_key')
                 )
                 st.image(image, caption="Your journey visualization", use_container_width=True)
                 st.caption(f"Generated from: {image_prompt}")
             except Exception as e:
-                st.error(f"❌ HuggingFace Image Error: {str(e)}")
+                st.error(f"❌ Stable Horde Image Error: {str(e)}")
     else:
-        st.error("❌ HuggingFace token required for image generation")
+        st.error("❌ Stable Horde API key required for image generation")
     
     # Save complete session
     save_session(
@@ -227,7 +226,7 @@ if st.session_state.show_summary:
     
     # Reset option
     if st.button("🔄 Start New Session"):
-        keys_to_keep = ['google_api_key', 'openai_api_key', 'hf_token', 'api_keys_set']
+        keys_to_keep = ['google_api_key', 'openai_api_key', 'horde_api_key', 'api_keys_set']
         keys_backup = {k: st.session_state[k] for k in keys_to_keep if k in st.session_state}
         st.session_state.clear()
         st.session_state.update(keys_backup)
